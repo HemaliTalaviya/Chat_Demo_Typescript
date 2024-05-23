@@ -1,0 +1,13 @@
+"use strict";
+const EVENT_NAME = {
+    SET_USER_NAME: 'SET_USER_NAME',
+    USER_LIST: 'USER_LIST',
+    SEARCH_ITEM: 'SEARCH_ITEM',
+    SEND_MSG: 'SEND_MSG',
+    CHAT_HIS: 'CHAT_HIS',
+    MAKE_GROUP: 'MAKE_GROUP',
+    GROUP: 'GROUP',
+    GROUP_LIST: 'GROUP_LIST',
+    DELETE_GROUP: 'DELETE_GROUP',
+};
+module.exports = EVENT_NAME;

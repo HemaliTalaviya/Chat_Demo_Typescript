@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp UI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 250px;
+      background-color: #ece5dd;
+      padding: 20px;
+      border-right: 1px solid #ccc;
+    }
+
+    .header {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .search-bar {
+      margin-bottom: 20px;
+    }
+
+    .chat-list {
+      overflow-y: auto;
+    }
+
+    .chat {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .avatar {
+      width: 50px;
+      height: 50px;
+      background-color: #ccc;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+
+    .details {
+      flex-grow: 1;
+    }
+
+    .name {
+      font-weight: bold;
+    }
+
+    .chat-window {
+      flex-grow: 1;
+      padding: 20px;
+    }
+
+    .header {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .chat-messages {
+      height: calc(100% - 100px);
+      overflow-y: auto;
+    }
+
+    .message-input {
+      display: flex;
+      margin-top: 20px;
+    }
+
+    .message-input input {
+      flex-grow: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px 0 0 5px;
+    }
+
+    .message-input button {
+      padding: 10px 20px;
+      border: none;
+      background-color: #007bff;
+      color: #fff;
+      border-radius: 0 5px 5px 0;
+      cursor: pointer;
+    }
+
+
+    .group {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-evenly;
+    }
+
+    .group span {
+      font-weight: bold;
+      background-color: burlywood;
+      border: 1px solid blue;
+      padding: 10px;
+    }
+
+    .group-list {
+      margin-bottom: 20px;
+      background-color: aquamarine;
+      border: 1px solid red;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .dropdown-menu {
+      list-style-type: none;
+      padding: 0;
+      display: none;
+    }
+
+    .dropdown-menu.show {
+      display: block;
+    }
+
+    button {
+      padding: 0px !important;
+      width: 52.91px;
+
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="sidebar">
+      <div class="header">WhatsApp</div>
+      <div class="group-bar">
+        <div class="dropdown">
+          <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+            aria-expanded="false" onclick="group()">
+            GROUP
+          </button>
+          <ul class="dropdown-menu" id="Dropdown" style="padding: 10px 20px;"></ul>
+        </div>
+        <div class="group-list" id="GList">
+
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" placeholder="Search" id="searchItem" onkeyup="searchItem()">
+      </div>
+
+      <div class="chat-list" id="chatList">
+        <!-- <div class="chat">
+          <div class="avatar"></div>
+          <div class="details">
+            <div class="name">John Doe</div>
+            <div class="message">Hello!</div>
+          </div>
+        </div> -->
+        <!-- More chat items can be added here -->
+      </div>
+    </div>
+    <div class="chat-window">
+      <div class="header" id="nm1"></div>
+      <div class="chat-messages">
+        <div id="allp">
+
+        </div>
+        <!-- Chat messages will be displayed here -->
+      </div>
+      <div class="message-input">
+        <input type="text" placeholder="Type a message" id="msg" disabled>
+        <button onclick="chat()" id="sendBtn" disabled>Send</button>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io()
+  let name;
+  do {
+    name = prompt("Enter name=")
+  } while (!name)
+  const data = document.getElementById('nm1').textContent = `${name}`
+
+  let chatArea = document.querySelector('.chat-messages');
+  let userDiv = ""
+  let receiver = ""
+  let userId = ""
+  let searchData = ""
+  let enableChat = false;
+  let allData = [];
+
+  socket.emit('SET_USER_NAME', { eventName: "SET_USER_NAME", data: { name } })
+
+  socket.on('SET_USER_NAME', (data) => {
+    // console.log('SET_USER_NAME event===', data)
+    userId = data.data.userId;
+    console.log('user id SET_USER_NAME ==', userId)
+    if (userId !== undefined) {
+      socket.emit('USER_LIST', { eventName: "USER_LIST", data: {} })
+      socket.emit('GROUP_LIST', { eventName: "GROUP_LIST", data: { userId } })
+    }
+  })
+
+
+
+  socket.on('USER_LIST', (data) => {
+    // console.log('userLIst======',data)
+    printUser(data)
+  })
+
+  function printUser(data) {
+    let userDiv = ""
+    // console.log('dattaa set user name===', userData)
+    data.data.users.forEach(element => {
+      // console.log('user list event element==', element)
+      if (userId !== element._id) {
+        userDiv += '<div class="chat"  onclick = "perUser(\'' + element._id + '\')">'
+          + '<div class="avatar"></div>'
+          + '<div class="details">'
+          + '<div class="name" id="' + element._id + '">' + element.name + '</div>'
+          + '</div></div>'
+      }
+    })
+
+    // console.log('userdiv=', userDiv)
+    document.getElementById('chatList').innerHTML = userDiv
+    var allUser = document.getElementsByClassName('name')
+    // console.log('allUser===', allUser, receiver)
+
+    for (let index = 0; index < allUser.length; index++) {
+      if (allUser[index].id == receiver) {
+        allUser[index].style.color = 'red'
+      } else {
+        allUser[index].style.color = 'black'
+
+      }
+    }
+  }
+
+  socket.on('SEARCH_ITEM', (data) => {
+    // console.log('this log is SEARCH_ITEM =', data);
+    printUser(data)
+  })
+
+
+  function chat() {
+    const message = document.getElementById('msg').value;
+    if (!message) {
+      return alert('please enter valid message')
+    }
+    // console.log(message);
+    // const obj = {
+    //   userId,
+    //   message,
+    //   receiver
+    // }
+    // console.log('message===', obj)
+    socket.emit('SEND_MSG', { eventName: "SEND_MSG", data: { userId, message, receiver } })
+    document.getElementById('msg').value = ""
+  }
+
+
+  function scrollTopDown() {
+    chatArea.scrollTop = chatArea.scrollHeight
+  }
+
+  socket.on('SEND_MSG', (data) => {
+    console.log('send msg fornytend =', data)
+    // console.log('send msg fornytend chatData log =', data.data.groupSendMsg)
+
+    // console.log(`'userId${userId} sender${data.ChatData.sender} receiverId ${receiver} receiver${data.ChatData.receiver}`)
+    // console.log('receiver data===',receiver)
+    if (data.data.groupchat) {
+      // console.log('groupchat');
+      if (userId === data.data.groupSendMsg.sender) {
+        createCard(data.data.groupSendMsg.sender, data.data.groupSendMsg.msg, 'right')
+      }
+      else {
+        createCard(data.data.groupSendMsg.receiver, data.data.groupSendMsg.msg, 'left')
+      }
+      scrollTopDown()
+
+    } else {
+      if (userId === data.data.chatData.sender && receiver === data.data.chatData.receiver || userId === data.data.chatData.receiver && receiver === data.data.chatData.sender) {
+        if (userId === data.data.chatData.sender && receiver === data.data.chatData.receiver) {
+          // console.log('true condition');
+          createCard(data.data.chatData.sender, data.data.chatData.msg, 'right')
+        }
+        else {
+          // console.log('false condition');
+          createCard(data.data.chatData.receiver, data.data.chatData.msg, 'left')
+        }
+        scrollTopDown()
+      }
+    }
+
+  })
+
+  socket.on('CHAT_HIS', (data) => {
+    console.log('GET_USER_CHAT_HIS data ====', data)
+
+    document.getElementById('allp').innerHTML = "";
+    if (data.data.Chat.length > 0) {
+      data.data.Chat.forEach(async (element) => {
+        // console.log('GET_USER_CHAT_HIS element data ====', element)
+        if (data.data.groupchat) {
+          if (userId === element.sender) {
+            // console.log('group chat get user::::::::: ===true')
+            await createCard(element.sender, element.msg, 'right')
+          } else if (receiver === element.receiver) {
+            // console.log('group chat get user::::::::: ===false')
+            await createCard(element.receiver, element.msg, 'left')
+          }
+
+        } else {
+          if (userId === element.sender && receiver === element.receiver || userId === element.receiver && receiver === element.sender) {
+            if (userId === element.sender) {
+              await createCard(element.sender, element.msg, 'right')
+            } else {
+              await createCard(element.receiver, element.msg, 'left')
+            }
+            scrollTopDown()
+          }
+        }
+      })
+    }
+
+    let textBox = document.getElementById('msg')
+    let sendButton = document.getElementById('sendBtn')
+    textBox.disabled = false
+    sendButton.disabled = false
+
+  })
+
+
+  function searchItem() {
+    // console.log('search data===',receiver)
+    const searchData = document.getElementById('searchItem').value;
+    // console.log('serach item data====',searchData)
+    socket.emit('SEARCH_ITEM', { eventName: "SEARCH_ITEM", data: { searchData } });
+  }
+
+  function perUser(receiverId) {
+    console.log('receiver Id=', receiverId)
+    receiver = receiverId,
+      enableChat = true
+
+    var allUser = document.getElementsByClassName('name')
+    // console.log('allUser===', allUser, receiver)
+
+    const groupElements = document.querySelectorAll('span');
+    // console.log('element group=', groupElements)
+    if (groupElements) {
+      for (let index = 0; index < groupElements.length; index++) {
+        if (groupElements[index].id == receiver) {
+          groupElements[index].style.color = 'red'
+        } else {
+          groupElements[index].style.color = 'black'
+        }
+      }
+    }
+
+    for (let index = 0; index < allUser.length; index++) {
+      if (allUser[index].id == receiver) {
+        allUser[index].style.color = 'red'
+      } else {
+        allUser[index].style.color = 'black'
+      }
+    }
+    // socket.emit('change_receiver_color', receiver);
+    socket.emit('CHAT_HIS', { eventName: "CHAT_HIS", data: { receiver, sender: userId } })
+    // socket.emit('leaveGroup',{receiver})
+
+    let textBox = document.getElementById('msg')
+    let sendButton = document.getElementById('sendBtn')
+    textBox.disabled = false
+    sendButton.disabled = false
+  }
+
+  // Create a new card element
+  function createCard(title, content, align) {
+
+
+    const chatItem = document.createElement('div');
+    chatItem.classList.add('chat')
+
+    // Create card container
+    const card = document.createElement('div');
+    card.classList.add('card');
+
+    // Create card header
+    const cardHeader = document.createElement('div');
+    cardHeader.classList.add('card-header');
+    cardHeader.textContent = title;
+    cardHeader.style.textAlign = align;
+
+    // Create card body
+    const cardBody = document.createElement('div');
+    cardBody.classList.add('card-body');
+    cardBody.textContent = content;
+    cardBody.style.textAlign = align
+
+    // Append header and body to card 
+    card.appendChild(cardHeader);
+    card.appendChild(cardBody);
+
+    // Append card to a container in the document
+    document.getElementById('allp').appendChild(card);
+  }
+
+  function group() {
+
+    do {
+      group_name = prompt('Enter group name==')
+    } while (!group_name)
+    // console.log('group name =', group_name)
+    socket.emit('MAKE_GROUP', { eventName: "MAKE_GROUP", data: {} })
+  }
+
+  socket.on('GROUP_LIST', (data) => {
+    // console.log('GROUP_LIST data ===', data.data.allGroup)
+    for (let index = 0; index < data.data.allGroup.length; index++) {
+      // const element = array[index];
+      printGroup(data.data.allGroup[index])
+
+    }
+
+  })
+  socket.on('MAKE_GROUP', (data) => {
+    // console.log('all User =', data)
+    if (data.data.message === "Ok") {
+      // console.log('OK=====================true')
+      printAllUserForGroup(data.data.allUserData)
+    } else {
+      alert(data.data.message)
+    }
+  })
+
+
+  function printAllUserForGroup(data) {
+    // console.log('make group ===',data)
+    document.getElementById('Dropdown').innerHTML = ""
+    let selectedUser = [];
+    data.forEach(item => {
+
+      // console.log('group item ====',item)
+
+      if (name === item.name) {
+        return
+      }
+
+      const listItem = document.createElement('li');
+      listItem.style.margin = '5px 0'
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.style.marginLeft = '5px'
+      checkbox.id = item._id
+
+      checkbox.addEventListener('change', () => {
+
+        if (checkbox.checked) {
+          selectedUser.push(item._id);
+        } else {
+          let index = selectedUser.indexOf(item._id);
+          // console.log('index===',index)
+          if (index !== -1) {
+            selectedUser.splice(index, 1)
+          }
+        }
+        // console.log('Checkbox is checked', selectedUser);
+      })
+      checkbox.classList.add('dropdown-checkbox');
+
+      const label = document.createElement('label');
+      label.style.marginRight = '10px'
+      label.textContent = item.name;
+      label.appendChild(checkbox);
+      listItem.appendChild(label);
+      document.getElementById('Dropdown').appendChild(listItem)
+    });
+
+    const button = document.createElement('button');
+    button.textContent = 'CREATE';
+    button.style.marginTop = '10px';
+    button.style.backgroundColor = '#007bff'
+    button.addEventListener('click', () => {
+
+      if (selectedUser == '') {
+        return alert('please select user')
+      }
+      selectedUser.push(userId)
+
+      // console.log('selected User===',selectedUser)
+
+      socket.emit('GROUP', { eventName: "GROUP", data: { selectedUser, group_name, userId } })
+      // console.log('Button clicked',selectedUser);
+      // console.log('group name',group_name);
+      // console.log('user Id',userId);
+
+    });
+
+    document.getElementById('Dropdown').appendChild(button)
+  }
+
+
+  socket.on('GROUP', (data) => {
+    // console.log('GROUP event =', data)
+    // console.log('GROUP event =', data.data.groupAllData)
+    printGroup(data.data.groupAllData)
+  });
+
+  socket.on('DELETE_GROUP', (data) => {
+    // console.log('frontend delete group===', data.data.group)
+
+    const groupDivs = document.querySelectorAll('.group');
+    // console.log('groupList div ===', groupDivs)
+
+    groupDivs.forEach(groupDiv => {
+      const divId = groupDiv.id;
+      if (divId == data.data.group._id) {
+        // console.log(`group deleted =${divId}--${data.data.group._id}`)
+        groupDiv.remove();
+        document.getElementById('allp').innerHTML = "";
+      }
+      // console.log('Div ID:', divId);
+    })
+
+  })
+
+  function printGroup(data) {
+    // alert('group')
+    // console.log('frontend data ====',data)
+    let groupListContainer = document.getElementById('GList');
+
+    const groupElement = document.createElement('div');
+    groupElement.classList.add('group');
+    groupElement.id = data._id;
+    groupElement.dataset.groupId = data._id; // Assuming _id is the unique identifier for each group
+
+    const groupNameElement = document.createElement('span');
+    groupNameElement.textContent = data.name;
+    groupNameElement.id = data._id;
+    groupNameElement.onclick = function () {
+      perUser(data._id)
+    }
+
+
+    const detailsButton = document.createElement('button');
+    detailsButton.textContent = 'Details';
+    detailsButton.style.margin = '5px';
+
+    detailsButton.addEventListener('click', function (event) {
+      event.stopPropagation(); // Prevent click event propagation to the group element
+      // console.log('Details button clicked for group:', data.members);
+      let showMember = [];
+      data.members.forEach(element => {
+        showMember.push(element.name)
+        // console.log('member name =',element.name)
+      });
+      alert(`group member = ${showMember}`)
+    });
+
+
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Delete';
+    deleteButton.style.marginRight = '10px';
+    deleteButton.addEventListener('click', function (event) {
+      event.stopPropagation();
+      // console.log('clicked',data._id)
+      let groupId = data._id
+      socket.emit('DELETE_GROUP', { eventName: "DELETE_GROUP", data: { groupId } })
+    });
+
+
+    groupListContainer.appendChild(groupElement);
+    groupElement.appendChild(groupNameElement);
+    groupElement.appendChild(detailsButton);
+
+    if (data.adminId[0] == userId) {
+      // console.log('adminId====', data.adminId[0])
+      groupElement.appendChild(deleteButton);
+    }
+
+  }
+
+
+
+</script>
+
+</html>
