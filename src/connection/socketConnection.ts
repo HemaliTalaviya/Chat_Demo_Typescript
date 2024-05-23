@@ -8,6 +8,7 @@ import { createAdapter } from "@socket.io/redis-adapter";
 import { pubClient, subClient } from "./redisConnection";
 
 const socketConnection = () => {
+    
     try {
         Promise.all([pubClient.connect(), subClient.connect()])
         .then(() => {
