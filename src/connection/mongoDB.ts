@@ -14,9 +14,6 @@ export const mongoDb = async () => {
                 logger.info('mongo Db connection error', err)
             })
         }
-
-
-
     } catch (error) {
         logger.info('Db connection Error:', error)
     }

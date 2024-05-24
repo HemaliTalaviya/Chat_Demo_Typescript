@@ -23,26 +23,3 @@ const redisConnection = () =>{
     }
 }
 export {redisConnection,pubClient,subClient}
-
-
-/*
-
-  try {
-         redisClient = redis.createClient();
-         pubClient = createClient({ url: "redis://localhost:6379" });
-         subClient = pubClient.duplicate();
-
-        redisClient.connect();
-        pubClient.connect();
-        subClient.connect();
-        redisClient.on('connect', ()=> {
-            console.log('connected redis');
-        })
-
-    } catch (error) {
-        console.log('redis connection error',error);
-    }
-
-
-
-*/

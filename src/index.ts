@@ -7,8 +7,6 @@ import http from "http";
 const app = express()
 const server = http.createServer(app);
 import { mongoDb } from "./connection/mongoDB";
-
-
 import { Server as SocketIOServer } from 'socket.io';
 import { redisConnection } from "./connection/redisConnection";
 import { socketConnection } from "./connection/socketConnection";
@@ -22,7 +20,6 @@ mongoDb();
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'))
 })
-
 
 const port = process.argv[2] || process.env.PORT || 3000
 server.listen(port, () => console.log('Listening port on...!!!', port))

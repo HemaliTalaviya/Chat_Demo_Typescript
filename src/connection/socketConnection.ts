@@ -8,7 +8,7 @@ import { createAdapter } from "@socket.io/redis-adapter";
 import { pubClient, subClient } from "./redisConnection";
 
 const socketConnection = () => {
-    
+
     try {
         Promise.all([pubClient.connect(), subClient.connect()])
         .then(() => {
@@ -16,8 +16,6 @@ const socketConnection = () => {
         }).catch((error) => {
             logger.error(`CATCH_ERROR socketConnection in ioAdapter :: ${error}`);
         })
-
-
         io.on('connection', async (socket :Socket) => {
             logger.info('user connected...' + socket.id)
 
